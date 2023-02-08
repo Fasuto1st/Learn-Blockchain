@@ -33,8 +33,23 @@ class Blockchain :
         #sha256
        return hashlib.sha256(encode_block).hexdigest()
 
+    def proof_of_work(self,previous_nonce):
+        #อยากไได้ค่า nonce ที่ส่งผลให้ได้ target hash => 4 หลักแรก => 0000xxxxxx
+        new_nonce = 1 #ค่า nonce ที่ต้องการ
+        check_proof = False #ตัวแปรเช็คค่า nonce ให้ได้ตาม target ที่กำหนด
+
+        #แก้โจทย์ทางคณิตศาสตร์
+        while check_proof is False:
+            hashoperation = hashlib.sha256(str(new_nonce**2 - previous_nonce**2).encode()).hexdigest()
+            if hashoperation[:4] == "0000":
+                check_proof = True
+            else:
+                new_nonce+=1
+        return new_nonce
+
 #ใช้งาน Blockchain
 blockchain = Blockchain()
+
 # print(blockchain.chain)
 print(blockchain.hash(blockchain.chain[0]))
 print(blockchain.hash(blockchain.chain[1]))
