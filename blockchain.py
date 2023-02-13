@@ -9,8 +9,8 @@ class Blockchain :
         #เก็บกลุ่มของ Block
         self.chain = [] #list ที่เก็บ block
         self.create_block(nonce=1,previous_hash="0")
-        self.create_block(nonce=10,previous_hash="10")
-        self.create_block(nonce=30,previous_hash="20") #genesis block
+        # self.create_block(nonce=10,previous_hash="10")
+        # self.create_block(nonce=30,previous_hash="20") #genesis block
 
     def create_block(self,nonce,previous_hash):
         #เก็บส่วนประกอบของ Block แต่ละ Block
@@ -49,6 +49,23 @@ class Blockchain :
                 new_nonce+=1
         return new_nonce
 
+    #ตรสจสอบ block
+    def is_chain_valid(self,chain):
+        previous_block = chain[0]
+        block_index = 1
+        while block_index<len(chain):
+            block = chain[block_index] #block ที่ตรวจสอบ
+            if block["previous_hash"] !=self.hash(previous_block):
+                return False
+            previous_nonce = previous_block["nonce"] #ค่า nonce ของ block ก่อนหน้า
+            nonce = block["nonce"] #ค่า nonce ของ block ที่ตรวจสอบ
+            hashoperation = hashlib.sha256(str(nonce**2 - previous_nonce**2).encode()).hexdigest()
+            if hashoperation[:4] != "0000":
+                return False
+            previous_block = block
+            block_index += 1
+        return True
+
 #web server
 app = Flask(__name__)
 #ใช้งาน Blockchain
@@ -67,6 +84,38 @@ def get_chain():
     }
     return jsonify(response),200
 
+@app.route('/mining',methods=["GET"])
+def mining_block():
+    #proof of work
+    previous_block = blockchain.get_previous_block()
+    previous_nonce = previous_block["nonce"]
+    #nonce
+    nonce = blockchain.proof_of_work(previous_nonce)
+    #hash block ก่อนหน้า
+    previous_hash = blockchain.hash(previous_block)
+    #update block
+    block = blockchain.create_block(nonce,previous_hash)
+    response = {
+        "message":"Mining Block Suscessfully",
+        "index":block["index"],
+        "timestamp":block["timestamp"],
+        "nonce":block["nonce"],
+        "previous_hash":block["previous_hash"]
+    }
+    return jsonify(response),200
+
+@app.route('/is_valid',methods=["GET"])
+def is_valid():
+    blockchain.is_chain_valid(blockchain.chain)
+    if is_valid:
+        response = {
+            "message":"Blockchain is valid."
+        }
+    else :
+        response = {
+            "message":"Blockchain isn't valid"
+        }
+    return jsonify(response),200
 #run server
 if __name__ =="__main__":
     app.run()
